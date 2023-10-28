@@ -1,0 +1,60 @@
+---
+- name: Ensure overlay modules is loaded
+  ansible.builtin.modprobe:
+    name: overlay
+    state: present
+
+- name: Ensure br_netfilter modules is loaded
+  ansible.builtin.modprobe:
+    name: br_netfilter
+    state: present
+
+- name: Enable net.ipv4.ip_forward on sysctl.conf
+  ansible.posix.sysctl:
+    name: net.ipv4.ip_forward
+    value: "1"
+    sysctl_set: true
+    state: present
+    reload: true
+
+- name: Enable bridge-nf-call-iptables on sysctl.conf
+  ansible.posix.sysctl:
+    name: net.bridge.bridge-nf-call-iptables
+    value: "1"
+    state: present
+    reload: true
+
+- name: Enable bridge-nf-call-ip6tables on sysctl.conf
+  ansible.posix.sysctl:
+    name: net.bridge.bridge-nf-call-ip6tables
+    value: "1"
+    state: present
+    reload: true
+
+- name: Check if kubeadm is initialized
+  ansible.builtin.stat:
+    path: /etc/kubernetes/pki/ca.key
+  register: kubeadm_ca
+
+- name: Initialize cluster
+  ansible.builtin.shell: "kubeadm init --pod-network-cidr {{ pod_network_cidr }} --apiserver-advertise-address {{ apiserver_advertise_address }}"
+  when: not kubeadm_ca.stat.exists
+
+- name: Connect to cluster
+  block:
+    - name: Create kubernetes config directory
+      ansible.builtin.file:
+        path: $HOME/.kube
+        state: directory
+        mode: "0755"
+    - name: Copy default config file
+      ansible.builtin.copy:
+        src: /etc/kubernetes/admin.conf
+        dest: $HOME/.kube/config
+        remote_src: true
+        mode: "0755"
+    - name: Change kube file permissions
+      ansible.builtin.file:
+        path: $HOME/.kube/config
+        owner: "{{ ansible_user_uid }}"
+        group: "{{ ansible_user_gid }}"
