@@ -1,0 +1,41 @@
+---
+- name: Install dependecies
+  ansible.builtin.apt:
+    name:
+      - apt-transport-https
+      - ca-certificates
+      - curl
+      - gpg
+    state: present
+    update_cache: true
+
+- name: Add Kubernetes repo
+  block:
+    - name: Kubernetes | Download armored GPG key
+      ansible.builtin.get_url:
+        url: https://pkgs.k8s.io/core:/stable:/v1.28/deb/Release.key
+        dest: /etc/apt/keyrings/kubernetes-apt-keyring.gpg.armor
+        mode: "0644"
+        checksum: "sha256:5fe267a9ae47ffd566624057f2c8f64ab8a786a9c650e92cc22135381b04f12b"
+    - name: Kubernetes | De-armored GPG key
+      ansible.builtin.shell: gpg --dearmor < /etc/apt/keyrings/kubernetes-apt-keyring.gpg.armor > /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+      args:
+        creates: /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+    - name: Kubernetes | Update GPG key permissions
+      ansible.builtin.file:
+        path: /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+        mode: "0644"
+    - name: Kubernetes | Add repo
+      ansible.builtin.template:
+        src: kubernetes.list.j2
+        dest: /etc/apt/sources.list.d/kubernetes.list
+        mode: "0644"
+
+- name: Install kubeadm
+  ansible.builtin.apt:
+    name:
+      - kubelet
+      - kubeadm
+      - kubectl
+    state: present
+    update_cache: true

@@ -1,0 +1,19 @@
+- hosts: kube_cluster
+  gather_facts: true
+  become: true
+  roles:
+    - role: kube_cri
+    - role: kube_common
+#
+# - hosts: kube_control_plane
+#   gather_facts: true
+#   become: true
+#   roles:
+#     - role: kube_cluster
+#     - role: kube_cni
+#
+# - hosts: kube_worker
+#   gather_facts: true
+#   become: true
+#   roles:
+#     - role: kube_join_cluster

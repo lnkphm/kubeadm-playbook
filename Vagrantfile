@@ -13,7 +13,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   end
 
   boxes = [
-    { :name => "kube-controller-1", :ip => "192.168.56.2" },
+    { :name => "kube-control-plane-1", :ip => "192.168.56.2" },
     { :name => "kube-worker-1", :ip => "192.168.56.3" },
   ]
 
